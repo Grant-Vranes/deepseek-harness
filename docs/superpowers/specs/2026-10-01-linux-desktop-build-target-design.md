@@ -74,9 +74,10 @@ The existing `afterPack` hook's `verifyDesktopRuntime` call is already platform-
   - on a Linux machine with `libfuse2`: launch the AppImage, open a workspace, run a session, use the terminal tool
   - known behavioral differences are pre-existing implemented Linux branches (DOM shortcut dispatch, browse-mode directory picker without zenity/kdialog), not new code
 
-## Open Items for the Implementation Plan
+## Resolved Planning Items
 
-- Confirm whether the `packedLandlock` payload has a Linux binary variant; if not, this is the only work item beyond branch extension and gets its own plan step.
+- `packedLandlock` ships prebuilt Linux binaries (`native/system/packages/linux-x64/prebuilds.json`: `landlock-run` static-musl and `flock` node-api for glibc and musl), so packaging needs no Linux toolchain on the build host.
+- Cross-builds pin pnpm's optional-dependency selection through `--config.supportedArchitectures.*` in the runtime install step, because pnpm otherwise picks binaries for the build host.
 
 ## Rejected Alternatives
 
