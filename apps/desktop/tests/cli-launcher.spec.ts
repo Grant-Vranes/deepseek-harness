@@ -73,6 +73,14 @@ it('preserves common arguments, cwd, environment, binary input, stderr and exit 
   expect(run.stderr()).toBe('separate stderr\n')
 })
 
+it('installs the win32 launcher as bin/dsh.cmd', () => {
+  const cli = realpathSync(mkdtempSync(join(tmpdir(), 'dsh-cli-launcher-win32-')))
+  onTestFinished(() => rmSync(cli, { recursive: true, force: true }))
+  prepareDesktopCli(cli, 'win32')
+  const command = join(cli, 'bin', 'dsh.cmd')
+  expect(readFileSync(command, 'utf8')).toBe(readFileSync(join(import.meta.dirname, '..', 'cli', 'dsh.cmd'), 'utf8'))
+})
+
 it.skipIf(process.platform === 'win32')('installs the linux launcher as bin/dsh', () => {
   const cli = realpathSync(mkdtempSync(join(tmpdir(), 'dsh-cli-launcher-linux-')))
   onTestFinished(() => rmSync(cli, { recursive: true, force: true }))

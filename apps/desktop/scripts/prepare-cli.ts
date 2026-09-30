@@ -10,7 +10,7 @@ import { join } from 'node:path'
  */
 export function prepareDesktopCli(destination: string, platform: 'darwin' | 'win32' | 'linux'): void {
   const source = platform === 'win32' ? 'dsh.cmd' : platform === 'linux' ? 'dsh-linux' : 'dsh'
-  const command = join(destination, 'bin', 'dsh')
+  const command = join(destination, 'bin', platform === 'win32' ? 'dsh.cmd' : 'dsh')
   mkdirSync(join(destination, 'bin'), { recursive: true })
   copyFileSync(join(import.meta.dirname, '..', 'cli', source), command)
   if (platform !== 'win32') chmodSync(command, 0o755)
