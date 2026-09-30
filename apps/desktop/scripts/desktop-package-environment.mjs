@@ -72,7 +72,7 @@ function requireReadableFile(environment, name) {
 /**
  * Validate release configuration before preparation without invoking a token or Apple's services.
  * @param {NodeJS.ProcessEnv} environment File-owned release settings.
- * @param {{ platform: 'win32' | 'darwin', arch: string }} target Selected release target.
+ * @param {{ platform: 'win32' | 'darwin' | 'linux', arch: string }} target Selected release target.
  * @param {{ unsigned?: boolean, prepareOnly?: boolean }} options Explicit packaging mode.
  * @returns {void}
  */
@@ -81,7 +81,7 @@ export function validateDesktopPackageEnvironment(environment, target, options =
   resolveNpmRegistry(environment)
   resolveDesktopPolicyEnvironment(environment)
   if (target.platform === 'darwin') resolveMacOSPackageSettings(environment)
-  else resolveWindowsPackageSettings(environment)
+  else if (target.platform === 'win32') resolveWindowsPackageSettings(environment)
   if (options.unsigned) return
   if (!options.prepareOnly) resolveDesktopAutoUpdateConfig(environment, target.platform, target.arch)
   if (target.platform === 'win32') {
@@ -92,7 +92,7 @@ export function validateDesktopPackageEnvironment(environment, target, options =
       keyContainer: environment.DSH_DESKTOP_WINDOWS_KEY_CONTAINER,
     })
     if (!options.prepareOnly) resolveWindowsSignatureCacheDirectory(environment)
-  } else {
+  } else if (target.platform === 'darwin') {
     resolveMacOSSigningEnvironment(environment)
     const strategies = [
       ['APPLE_ID', 'APPLE_APP_SPECIFIC_PASSWORD', 'APPLE_TEAM_ID'],

@@ -25,8 +25,25 @@ describe('desktop package target', () => {
     expect(resolveDesktopPackageTarget('mac-x64', 'darwin', 'arm64').arch).toBe('x64')
   })
 
+  it('resolves the linux-x64 target selectors', () => {
+    expect(resolveDesktopPackageTarget('linux-x64', 'linux', 'x64')).toEqual({
+      name: 'linux-x64', platform: 'linux', arch: 'x64', builderPlatform: '--linux', builderArch: '--x64',
+    })
+  })
+
+  it('builds electron-builder arguments for linux-x64', () => {
+    const target = resolveDesktopPackageTarget('linux-x64', 'linux', 'x64')
+    const args = desktopElectronBuilderArguments(target, false)
+    expect(args).toContain('--linux')
+    expect(args).toContain('--x64')
+  })
+
+  it('defaults to linux-x64 on a linux x64 host', () => {
+    expect(parseDesktopPackageInvocation([], 'linux', 'x64').target.name).toBe('linux-x64')
+  })
+
   it('rejects unsupported targets and hosts before building', () => {
-    expect(() => resolveDesktopPackageTarget('linux-x64', 'linux', 'x64')).toThrow(/unsupported target/u)
+    expect(() => resolveDesktopPackageTarget('linux-arm64', 'linux', 'arm64')).toThrow(/unsupported target/u)
     expect(() => resolveDesktopPackageTarget('win-x64', 'darwin', 'arm64')).toThrow(/Windows x64/u)
     expect(() => resolveDesktopPackageTarget('mac-arm64', 'darwin', 'x64')).toThrow(/Apple Silicon/u)
     expect(() => resolveDesktopPackageTarget('mac-arm64', 'linux', 'arm64')).toThrow(/macOS/u)
