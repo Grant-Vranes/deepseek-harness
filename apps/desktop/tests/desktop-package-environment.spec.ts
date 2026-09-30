@@ -76,6 +76,13 @@ describe('Desktop local packaging configuration', () => {
     })
   })
 
+  it('loads linux settings from .env.linux', async () => {
+    await withDirectory(async (directory) => {
+      await writeFile(join(directory, '.env.linux'), '')
+      expect(loadDesktopPackageEnvironment('linux', {}, directory).DSH_DESKTOP_AUTO_UPDATE_ENV).toBeUndefined()
+    })
+  })
+
   it.each(['win32', 'darwin'] as const)('owns the %s release ID in its platform file', async (platform) => {
     await withDirectory(async (directory) => {
       const settings = Object.entries(RELEASE).map(([name, value]) => `${name}='${value}'`).join('\n') + '\n'
