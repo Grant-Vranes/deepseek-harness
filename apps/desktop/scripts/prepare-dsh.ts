@@ -116,7 +116,7 @@ function runPnpm(args: readonly string[]): Promise<void> {
 function targetPlatformArguments(target: { platform: NodeJS.Platform; arch: string }): string[] {
   if (target.platform === process.platform && target.arch === process.arch) return []
   return [
-    `--config.supportedArchitectures.os=${target.platform === 'darwin' ? 'darwin' : target.platform}`,
+    `--config.supportedArchitectures.os=${target.platform}`,
     `--config.supportedArchitectures.cpu=${target.arch}`,
     '--config.supportedArchitectures.libc=glibc',
   ]
