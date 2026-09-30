@@ -233,6 +233,8 @@ export function createElectronBuilderConfig(
     linux: {
       category: 'Development',
       target: ['AppImage'],
+      icon: fileURLToPath(new URL('../resources/icon-macos.png', import.meta.url)),
+      executableName: 'deepseek-harness',
     },
     nsis: {
       installerSidebar: join(buildPaths.root, 'installer-ui', 'uninstaller-sidebar.bmp'),
