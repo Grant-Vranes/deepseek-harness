@@ -1,4 +1,5 @@
 #!/bin/sh
+# Linux twin of `dsh`; keep it in sync with that script.
 # Run the installed CLI without changing the invoking shell or working directory.
 set -e
 launcher=$0

@@ -1,7 +1,7 @@
 /** Installed launcher scripts preserve terminal invocation through a minimal runtime fixture. */
 
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
-import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
@@ -71,6 +71,19 @@ it('preserves common arguments, cwd, environment, binary input, stderr and exit 
   expect(await run.closed, run.stderr()).toBe(23)
   expect(JSON.parse(run.stdout())).toEqual({ args, cwd: f.root, value: 'kept', nodeMode: '1', input: input.toString('hex') })
   expect(run.stderr()).toBe('separate stderr\n')
+})
+
+it.skipIf(process.platform === 'win32')('installs the linux launcher as bin/dsh', () => {
+  const cli = realpathSync(mkdtempSync(join(tmpdir(), 'dsh-cli-launcher-linux-')))
+  onTestFinished(() => rmSync(cli, { recursive: true, force: true }))
+  prepareDesktopCli(cli, 'linux')
+  const command = join(cli, 'bin', 'dsh')
+  const linuxSource = readFileSync(join(import.meta.dirname, '..', 'cli', 'dsh-linux'), 'utf8')
+  const darwinSource = readFileSync(join(import.meta.dirname, '..', 'cli', 'dsh'), 'utf8')
+  const binary = (text: string) => text.slice(text.lastIndexOf('exec "'))
+  expect(readFileSync(command, 'utf8')).toBe(linuxSource)
+  expect(statSync(command).mode & 0o777, 'linux launchers stay executable').toBe(0o755)
+  expect(binary(linuxSource)).toBe(binary(darwinSource).replace('MacOS/DeepSeek Harness', 'deepseek-harness'))
 })
 
 it.skipIf(process.platform === 'win32')('resolves chained command symlinks without expanding argument contents', async () => {
