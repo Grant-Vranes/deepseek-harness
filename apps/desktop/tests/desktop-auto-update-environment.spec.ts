@@ -34,6 +34,10 @@ describe('desktop auto-update environment', () => {
     })
   })
 
+  it('resolves the linux-x64 update target directory', () => {
+    expect(resolveDesktopAutoUpdateTarget('linux', 'x64')).toBe('linux-x64')
+  })
+
   it('defaults packages and uploads to the test deployment', () => {
     expect(resolveDesktopAutoUpdateEnvironment({})).toBe('test')
     expect(resolveDesktopAutoUpdateConfig({
@@ -107,8 +111,8 @@ describe('desktop auto-update environment', () => {
     expect(() => resolveDesktopAutoUpdateEnvironment({
       DSH_DESKTOP_AUTO_UPDATE_ENV: 'staging',
     })).toThrow(/test.*production/u)
-    expect(() => resolveDesktopAutoUpdateTarget('linux', 'x64')).toThrow(/unsupported target/u)
-    expect(() => desktopBuildRecordFilename('linux-x64' as 'mac-arm64')).toThrow(/unsupported target/u)
+    expect(() => resolveDesktopAutoUpdateTarget('linux', 'arm64')).toThrow(/unsupported target/u)
+    expect(() => desktopBuildRecordFilename('linux-arm64' as 'mac-arm64')).toThrow(/unsupported target/u)
   })
 
   it('uses Nightly metadata for stable and prerelease Desktop versions', () => {
