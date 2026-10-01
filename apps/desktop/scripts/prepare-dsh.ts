@@ -5,6 +5,7 @@ import { spawn } from 'node:child_process'
 import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { delimiter, join, relative, resolve } from 'node:path'
+import { createRequire } from 'node:module'
 import { desktopNodeEnvironment } from '../src/node-environment.ts'
 import { createRuntimeProjectMetadata } from '../src/project-manager.ts'
 import { DESKTOP_HOST_PROTOCOL_VERSION } from '../src/host-protocol.ts'
@@ -45,6 +46,10 @@ const NODE = join(BUILD_PATHS.electron, (() => {
   const { platform } = desktopTargetPlatform(resolveDesktopBuildTarget())
   return platform === 'win32' ? 'electron.exe' : platform === 'linux' ? 'electron' : 'Electron.app/Contents/MacOS/Electron'
 })())
+/** Runnable Node-mode executable for local child processes; cross-builds probe with the host Electron of the same pinned version. */
+const LOCAL_NODE = desktopTargetPlatform(resolveDesktopBuildTarget()).platform === process.platform
+  ? NODE
+  : createRequire(import.meta.url)('electron') as unknown as string
 const PNPM = join(RUNTIME_ROOT, 'pnpm', 'bin', 'pnpm.mjs')
 
 function manifestVersion(path: string, subject: string): string {
@@ -78,7 +83,7 @@ function runPnpm(args: readonly string[]): Promise<void> {
     const userConfig = join(config, 'npmrc')
     mkdirSync(config, { recursive: true })
     writeFileSync(userConfig, '')
-    const child = spawn(NODE, [
+    const child = spawn(LOCAL_NODE, [
       '--expose-internals',
       PNPM,
       `--config.registry=${registry}`,
@@ -96,7 +101,7 @@ function runPnpm(args: readonly string[]): Promise<void> {
         NPM_CONFIG_REGISTRY: registry,
         NPM_CONFIG_STORE_DIR: STORE_ROOT,
         NPM_CONFIG_USERCONFIG: userConfig,
-        ...desktopNodeEnvironment(NODE, join(RUNTIME_ROOT, 'bin'), {}),
+        ...desktopNodeEnvironment(LOCAL_NODE, join(RUNTIME_ROOT, 'bin'), {}),
         PATH: `${join(RUNTIME_ROOT, 'bin')}${delimiter}${process.env.PATH ?? ''}`,
         XDG_CACHE_HOME: join(PNPM_BUILD_STATE, 'cache'),
         XDG_CONFIG_HOME: config,
@@ -116,9 +121,9 @@ function runPnpm(args: readonly string[]): Promise<void> {
 function targetPlatformArguments(target: { platform: NodeJS.Platform; arch: string }): string[] {
   if (target.platform === process.platform && target.arch === process.arch) return []
   return [
-    `--config.supportedArchitectures.os=${target.platform}`,
-    `--config.supportedArchitectures.cpu=${target.arch}`,
-    '--config.supportedArchitectures.libc=glibc',
+    `--config.os=${target.platform}`,
+    `--config.cpu=${target.arch}`,
+    '--config.libc=glibc',
   ]
 }
 
@@ -131,12 +136,19 @@ async function main(): Promise<void> {
     })
     const release = desktopRelease()
     const target = desktopTargetPlatform(resolveDesktopBuildTarget())
+
     await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:stage-packages', async () => {
       copyFileSync(join(PACKAGE_SET_ROOT, DESKTOP_PACKAGE_SET_FILE), join(BUILD_ROOT, DESKTOP_PACKAGE_SET_FILE))
       cpSync(join(PACKAGE_SET_ROOT, DESKTOP_PACKAGES_DIR), join(BUILD_ROOT, DESKTOP_PACKAGES_DIR), { recursive: true })
-      createRuntimeProjectMetadata(BUILD_ROOT, release)
+      createRuntimeProjectMetadata(BUILD_ROOT, release, {
+        // Cross-builds cannot run koffi's host-verification install script; the
+        // per-platform prebuilt packages are installed and resolved on the target.
+        koffiBuildAllowed: target.platform === process.platform,
+      })
     })
-    await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:lockfile', () => runPnpm(['install', '--lockfile-only']))
+    await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'runtime:lockfile', () => runPnpm([
+      'install', '--lockfile-only', ...targetPlatformArguments(target),
+    ]))
     verifyDesktopCoreLockfile(
       readFileSync(join(BUILD_ROOT, 'pnpm-lock.yaml'), 'utf8'),
       readDesktopCorePackageSet(BUILD_ROOT, release.version),
@@ -168,7 +180,7 @@ async function main(): Promise<void> {
     if (!existsSync(join(DSH_OUTPUT_ROOT, 'node_modules', '@deepseek-ai', `libreoffice-kit-${officeEngine}`, 'prebuilds.json'))) {
       throw new Error(`desktop runtime: missing required LibreOffice engine ${officeEngine}`)
     }
-    if (process.platform === 'darwin') {
+    if (target.platform === 'darwin') {
       await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'sign:dsh-native', () => signMacOSRuntime(DSH_OUTPUT_ROOT, resolveDesktopAppId(process.env), resolveMacOSSigningEnvironment(process.env), target.arch, join(BUILD_PATHS.root, 'signature-cache')))
       await packagingStep(process.env.DSH_DESKTOP_PACKAGING_RUN_DIR, 'sign:primary-native', () => signMacOSRuntime(join(RUNTIME_ROOT, 'primary-runtime'), resolveDesktopAppId(process.env), resolveMacOSSigningEnvironment(process.env), target.arch, join(BUILD_PATHS.root, 'signature-cache')))
     }

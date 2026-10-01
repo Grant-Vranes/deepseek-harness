@@ -35,17 +35,18 @@ function writeJson(path: string, value: unknown): void {
   writeFileSync(path, `${JSON.stringify(value, undefined, 2)}\n`, { mode: 0o600 })
 }
 
-function workspaceFile(overrides: Readonly<Record<string, string>> = {}): string {
+function workspaceFile(overrides: Readonly<Record<string, string>> = {}, koffiBuildAllowed = true): string {
   const entries = Object.entries(overrides).sort(([left], [right]) => left.localeCompare(right))
   const overrideSection = entries.length === 0
     ? ''
     : `overrides:\n${entries.map(([name, spec]) => `  ${JSON.stringify(name)}: ${JSON.stringify(spec)}`).join('\n')}\n`
+  const buildAllowance = `allowBuilds:\n  node-pty: true\n  koffi: ${koffiBuildAllowed}\n  fs-ext: true\n`
   if (entries.length === 0) return `packages:\n  - .\n\n${WORKSPACE_SETTINGS}`
   const coreBuildSpec = overrides[CORE_BUILD_PACKAGE]
   const coreBuildKey = coreBuildSpec === undefined
     ? CORE_BUILD_PACKAGE
     : `${CORE_BUILD_PACKAGE}@${coreBuildSpec.replace('file:./', 'file:')}`
-  return `packages:\n  - .\n\n${overrideSection}${WORKSPACE_SETTINGS}allowBuilds:\n  node-pty: true\n  koffi: true\n  fs-ext: true\n  ${JSON.stringify(coreBuildKey)}: true\n  '@google/genai': false\n  protobufjs: false\n  node-addon-require-builtin: false\n`
+  return `packages:\n  - .\n\n${overrideSection}${WORKSPACE_SETTINGS}${buildAllowance}  ${JSON.stringify(coreBuildKey)}: true\n  '@google/genai': false\n  protobufjs: false\n  node-addon-require-builtin: false\n`
 }
 
 function migrateProfileSettings(projectDir: string): void {
@@ -131,7 +132,11 @@ export class DesktopProjectManager {
 }
 
 /** Create build-only project metadata for materializing the signed runtime. */
-export function createRuntimeProjectMetadata(projectDir: string, release: DesktopRelease): void {
+export function createRuntimeProjectMetadata(
+  projectDir: string,
+  release: DesktopRelease,
+  options: { koffiBuildAllowed?: boolean } = {},
+): void {
   mkdirSync(projectDir, { recursive: true, mode: 0o700 })
   const packageSet = verifyDesktopCorePackageSet(projectDir, release.version)
   const manifest = {
@@ -144,7 +149,7 @@ export function createRuntimeProjectMetadata(projectDir: string, release: Deskto
   writeJson(join(projectDir, 'package.json'), manifest)
   writeFileSync(
     join(projectDir, 'pnpm-workspace.yaml'),
-    workspaceFile(desktopCorePackageOverrides(packageSet)),
+    workspaceFile(desktopCorePackageOverrides(packageSet), options.koffiBuildAllowed ?? true),
     { mode: 0o600 },
   )
 }

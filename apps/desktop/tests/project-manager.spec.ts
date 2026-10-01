@@ -1,9 +1,11 @@
+import { createHash } from 'node:crypto'
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveDesktopPaths } from '../src/paths.ts'
-import { DesktopProjectManager } from '../src/project-manager.ts'
+import { createRuntimeProjectMetadata, DesktopProjectManager } from '../src/project-manager.ts'
+import { DESKTOP_HOST_PROTOCOL_VERSION } from '../src/host-protocol.ts'
 import { readProfilePlugins } from '@deepseek-ai/dsh-app-boot'
 import { runtimeFixture } from './runtime-fixture.ts'
 
@@ -328,5 +330,42 @@ describe('desktop link-backend projections', () => {
     expect(existsSync(join(profile, '.dsh-module-fallback'))).toBe(false)
     expect(lstatSync(join(profile, 'node_modules', 'bridge'), { throwIfNoEntry: false })).toBeUndefined()
     expect(existsSync(join(target, 'package.json'))).toBe(true)
+  })
+})
+
+describe('desktop runtime project metadata', () => {
+  function seedPackageSet(projectDir: string, version: string): void {
+    const body = Buffer.from('tarball\n')
+    const record = (name: string): object => ({
+      name, version,
+      file: `${name.replace('@', '').replace('/', '-')}-${version}.tgz`,
+      bytes: body.byteLength,
+      integrity: `sha512-${createHash('sha512').update(body).digest('base64')}`,
+    })
+    mkdirSync(join(projectDir, 'desktop-packages'), { recursive: true })
+    for (const name of ['@deepseek-ai/dsh', '@deepseek-ai/dsh-desktop-host']) {
+      const recordName = name
+      const file = `${recordName.replace('@', '').replace('/', '-')}-${version}.tgz`
+      writeFileSync(join(projectDir, 'desktop-packages', file), body)
+    }
+    const packages = ['@deepseek-ai/dsh', '@deepseek-ai/dsh-desktop-host'].map(record)
+    writeFileSync(join(projectDir, 'desktop-packages.json'), JSON.stringify({ schemaVersion: 1, packages }))
+  }
+
+  const release = {
+    schemaVersion: 1, version: '0.2.0-test.1', hostProtocolVersion: DESKTOP_HOST_PROTOCOL_VERSION,
+    nodeVersion: '22.22.0', pnpmVersion: '11.7.0',
+  } as const
+
+  it('allows the koffi install script by default and forbids it for cross-host builds', () => {
+    for (const koffiBuildAllowed of [undefined, false, true]) {
+      const projectDir = join(temporaryRoot(), 'runtime-project')
+      seedPackageSet(projectDir, release.version)
+      createRuntimeProjectMetadata(projectDir, release, koffiBuildAllowed === undefined ? {} : { koffiBuildAllowed })
+      const workspace = readFileSync(join(projectDir, 'pnpm-workspace.yaml'), 'utf8')
+      expect(workspace).toContain(`koffi: ${koffiBuildAllowed === false ? 'false' : 'true'}`)
+      expect(workspace).toContain('node-pty: true')
+      expect(workspace).toContain('fs-ext: true')
+    }
   })
 })
