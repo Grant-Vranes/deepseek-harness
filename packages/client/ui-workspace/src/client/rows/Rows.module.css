@@ -97,7 +97,7 @@
 
 /* Compact one-line Workspace row after removing the session-count subtitle. */
 .projectRow {
-  height: 34px;
+  height: 28px;
   align-items: center;
   box-sizing: border-box;
 }
@@ -108,7 +108,7 @@
 
 /* Session cell (figma): pad 8, a 16px status slot, then a 4px title gap. */
 .sessionRow {
-  height: 32px;
+  height: 28px;
   gap: 0;
 }
 

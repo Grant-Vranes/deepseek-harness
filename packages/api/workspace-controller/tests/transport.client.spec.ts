@@ -403,6 +403,14 @@ describe('WorkspaceController', () => {
     )))
     await expect(controller.insertSessionBefore(wid('missing'), sid('session')))
       .rejects.toThrow('workspace move failed: workspace/move-invalid: invalid move')
+
+    mock.remote.workspace.gitBranch.mockResolvedValueOnce(err(new RemoteError('gateway/internal', 'denied', {})))
+    await expect(controller.gitBranch('/missing')).rejects.toThrow('workspace git branch failed: gateway/internal: denied')
+    mock.remote.workspace.gitBranch.mockResolvedValueOnce({ ok: true, value: { branch: null } })
+    await expect(controller.gitBranch('/plain')).resolves.toBeNull()
+    mock.remote.workspace.gitBranch.mockResolvedValueOnce({ ok: true, value: { branch: 'main' } })
+    await expect(controller.gitBranch('/repo')).resolves.toBe('main')
+    expect(mock.log.requests('workspace/gitBranch')).toEqual([{ path: '/missing' }, { path: '/plain' }, { path: '/repo' }])
   })
 
   it('receives a carrier throw as the client\'s gateway/internal fold, never as a rejection', async ({ mock, start }) => {

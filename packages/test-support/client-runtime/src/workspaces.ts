@@ -207,4 +207,17 @@ export class TestWorkspaces implements IWorkspaces {
       draft.pinnedSessionIds = draft.pinnedSessionIds.filter(id => id !== sessionId)
     })
   }
+
+  /**
+   * Resolve a git branch (recorded). The default is the inert non-repository
+   * answer; stub for a branch-bearing fixture.
+   * @param path - host directory to resolve.
+   * @returns the branch, or `null` when the directory is not inside a git worktree.
+   */
+  async gitBranch(path: string): Promise<string | null> {
+    this.calls.push({ method: 'gitBranch', args: [path] })
+    const stub = this.stubs.get('gitBranch')
+    if (stub !== undefined) return await (stub(path) as Promise<string | null>)
+    return null
+  }
 }

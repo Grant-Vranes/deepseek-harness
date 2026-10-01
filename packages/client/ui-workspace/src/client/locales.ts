@@ -118,6 +118,8 @@ export const zh = {
   'time.months': '{n}个月',
   'time.years': '{n}年',
   'time.ago': '{t}前',
+  'git.branch.aria': '当前工程 git 分支',
+  'git.none': '无git',
 } satisfies Record<string, string>
 
 /** The workspace namespace key union. */
@@ -237,4 +239,6 @@ export const en = {
   'time.months': '{n}mo',
   'time.years': '{n}y',
   'time.ago': '{t} ago',
+  'git.branch.aria': 'Git branch of the current workspace',
+  'git.none': 'No git',
 } satisfies Record<WorkspaceKey, string>

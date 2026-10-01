@@ -11,6 +11,7 @@ import type {
   WorkspaceCreateRequest,
   WorkspaceCreateValue,
   WorkspaceDeleteValue,
+  WorkspaceGitBranchValue,
   WorkspaceInsertSessionBeforeRequest,
   WorkspaceOrderValue,
   WorkspacePinSessionRequest,
@@ -110,6 +111,16 @@ export class ClientWorkspaceModel implements WorkspaceFollowSink {
     const result = await this.remote.initializeDefault(signal)
     if (result.ok && result.value !== undefined) this.upsert(result.value.workspace)
     return result
+  }
+
+  /**
+   * Resolve the git branch of one directory; a read-only pass-through that
+   * touches no projection state.
+   * @param path - fully qualified host directory.
+   * @returns generated Remote result.
+   */
+  async gitBranch(path: string): Promise<RemoteResult<WorkspaceGitBranchValue>> {
+    return await this.remote.gitBranch({ path })
   }
 
   /**

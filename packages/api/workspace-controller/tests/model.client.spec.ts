@@ -102,6 +102,10 @@ class FakeWorkspaceRemote implements WorkspaceRemote {
     _request: WorkspaceUnpinSessionRequest,
   ) => Promise<RemoteResult<WorkspacePinValue>> = () =>
     Promise.resolve(remoteOk({ pinnedSessionIds: [] }))
+  onGitBranch: (
+    request: { readonly path: string },
+  ) => Promise<RemoteResult<{ readonly branch: string | null }>> = request =>
+    Promise.resolve(remoteOk({ branch: request.path === '/w/plain' ? null : 'main' }))
 
   create(request: WorkspaceCreateRequest): Promise<RemoteResult<WorkspaceCreateValue>> {
     this.record('create', request)
@@ -146,6 +150,11 @@ class FakeWorkspaceRemote implements WorkspaceRemote {
   unpinSession(request: WorkspaceUnpinSessionRequest): Promise<RemoteResult<WorkspacePinValue>> {
     this.record('unpinSession', request)
     return this.onUnpinSession(request)
+  }
+
+  gitBranch(request: { readonly path: string }): Promise<RemoteResult<{ readonly branch: string | null }>> {
+    this.record('gitBranch', request)
+    return this.onGitBranch(request)
   }
 
   follow(_signal?: AbortSignal): RemoteStreamHandle<WorkspaceFollowFrame, never> {
@@ -536,6 +545,21 @@ describe('ClientWorkspaceModel', () => {
 
     await expect(model.insertBefore(wid('one'), wid('one'))).resolves.toMatchObject({ ok: true })
     expect(model.getSnapshot().items.map(item => item.workspaceId)).toEqual(['one', 'two'])
+  })
+
+  it('passes a git-branch lookup through without touching the projection', async () => {
+    const remote = new FakeWorkspaceRemote()
+    const model = modelFor(remote)
+    baseline(model, [workspace('plain')])
+    const before = model.getSnapshot()
+
+    await expect(model.gitBranch('/w/plain')).resolves.toEqual({ ok: true, value: { branch: null } })
+    await expect(model.gitBranch('/w/other')).resolves.toEqual({ ok: true, value: { branch: 'main' } })
+    expect(remote.calls.filter(call => call.method === 'gitBranch')).toEqual([
+      { method: 'gitBranch', request: { path: '/w/plain' } },
+      { method: 'gitBranch', request: { path: '/w/other' } },
+    ])
+    expect(model.getSnapshot()).toBe(before)
   })
 
   it('notifies subscribers and cancels a queued notification after an immediate delete echo', async () => {

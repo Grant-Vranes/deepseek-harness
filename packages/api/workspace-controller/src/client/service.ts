@@ -112,6 +112,13 @@ export interface IWorkspaces {
     sessionId: SessionId,
     beforeSessionId?: SessionId,
   ): Promise<WorkspaceView>
+  /**
+   * Resolve the git branch of one directory for display surfaces.
+   * @param path - fully qualified host directory.
+   * @returns the branch name, or `null` when the directory is not inside a git worktree.
+   * @throws {Error} when the Host or transport refuses the lookup.
+   */
+  gitBranch(path: string): Promise<string | null>
 }
 
 /** Owns the bare Workspace snapshot and Workspace-only commands. */
@@ -183,6 +190,12 @@ export class WorkspaceController extends Service implements IWorkspaces {
     const result = await this.model.insertSessionBefore(workspaceId, sessionId, beforeSessionId)
     if (!result.ok) throw commandError('move', result.error)
     return result.value.workspace
+  }
+
+  async gitBranch(path: string): Promise<string | null> {
+    const result = await this.model.gitBranch(path)
+    if (!result.ok) throw commandError('git branch', result.error)
+    return result.value.branch
   }
 }
 

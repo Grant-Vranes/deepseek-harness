@@ -129,6 +129,17 @@ export interface WorkspaceUnarchiveSessionRequest {
   readonly sessionId: SessionId
 }
 
+/** Git branch lookup for one directory. */
+export interface WorkspaceGitBranchRequest {
+  /** Fully qualified host directory to resolve the branch from. */
+  readonly path: string
+}
+
+/** Resolved git branch; `null` when the directory is not inside a git worktree. */
+export interface WorkspaceGitBranchValue {
+  readonly branch: string | null
+}
+
 /** Complete archived Session set after a mutation. */
 export interface WorkspaceArchiveValue {
   readonly archivedSessionIds: readonly SessionId[]

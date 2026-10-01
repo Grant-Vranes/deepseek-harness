@@ -73,7 +73,7 @@ describe('WorkspaceBrowser.module.css list', () => {
     expect(declarations('.flatList > * + *')?.get('margin-top')).toBe('2px')
     expect(declarations(".searchTree > [role='treeitem'] + [role='treeitem']")?.get('margin-top')).toBe('2px')
     expect(declarations('.groupSection > * + *')?.get('margin-top')).toBe('2px')
-    expect(declarations('.groupSection + .groupSection')?.get('margin-top')).toBe('4px')
+    expect(declarations('.groupSection + .groupSection')?.get('margin-top')).toBe('2px')
   })
 
   it('draws drag targets as a leading chevron joined to the insertion line', () => {
@@ -100,8 +100,8 @@ describe('WorkspaceBrowser.module.css list', () => {
     expect(declarations('.fade')?.get('height')).toBe('24px')
     expect(declarations('.sessionOverflowButton')?.get('height')).toBe('28px')
     expect(declarations('.searchExpanded')?.get('height')).toBe('30px')
-    expect(rowDeclarations('.projectRow')?.get('height')).toBe('34px')
-    expect(rowDeclarations('.sessionRow')?.get('height')).toBe('32px')
+    expect(rowDeclarations('.projectRow')?.get('height')).toBe('28px')
+    expect(rowDeclarations('.sessionRow')?.get('height')).toBe('28px')
     // One leading status cell for every session row, grouped or flat: the cell
     // hosts either the row's status dot or the leading seat, and it reserves its
     // own box, so the title's one shared margin below needs no per-view override.

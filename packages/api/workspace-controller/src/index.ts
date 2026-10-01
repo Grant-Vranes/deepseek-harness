@@ -7,6 +7,7 @@ import { WorkspaceCommands } from './commands.ts'
 import { DirectoryPickerController } from './directory-picker.ts'
 import { WorkspaceFeed, workspaceView } from './feed.ts'
 import { defaultWorkspaceDirectory, validateDocumentsDirectory } from './default-directory.ts'
+import { resolveGitBranch } from './git-branch.ts'
 import type {
   WorkspaceArchiveSessionRequest,
   WorkspaceArchiveValue,
@@ -15,6 +16,8 @@ import type {
   WorkspaceDeleteRequest,
   WorkspaceDeleteValue,
   WorkspaceFollowFrame,
+  WorkspaceGitBranchRequest,
+  WorkspaceGitBranchValue,
   WorkspaceInsertBeforeRequest,
   WorkspaceInsertSessionBeforeRequest,
   WorkspaceOrderValue,
@@ -184,6 +187,16 @@ export class WorkspaceController extends TypertRemoteService {
   @Remote('unpinSession')
   unpinSession(request: WorkspaceUnpinSessionRequest): Promise<WorkspacePinValue> {
     return this.commands.unpinSession(request)
+  }
+
+  /**
+   * Resolve the git branch of one directory for composer display.
+   * @param request - fully qualified directory path.
+   * @returns the branch name, or `null` when the directory is not inside a git worktree.
+   */
+  @Remote('gitBranch')
+  gitBranch(request: WorkspaceGitBranchRequest): Promise<WorkspaceGitBranchValue> {
+    return resolveGitBranch(request.path).then(branch => ({ branch }))
   }
 
   /**

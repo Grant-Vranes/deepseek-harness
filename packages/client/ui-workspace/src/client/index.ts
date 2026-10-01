@@ -48,6 +48,7 @@ import { WorkspaceBrowser } from './rows/WorkspaceBrowser.tsx'
 import { ArchiveSessionMenuItem, ArchiveSessionRowButton, SessionArchiveConfirmDialog } from './session-actions/ArchiveSession.tsx'
 import { derive } from './session-actions/derived.ts'
 import { ForkSessionMenuItem } from './session-actions/ForkSession.tsx'
+import { GitBranchTag, type GitBranchTagInjected } from './GitBranchTag.tsx'
 import { PinSessionMenuItem, PinSessionRowButton } from './session-actions/PinSession.tsx'
 import { RenameSessionMenuItem, SessionRenameDialog } from './session-actions/RenameSession.tsx'
 import { RowActionToast } from './session-actions/RowActionToast.tsx'
@@ -315,6 +316,15 @@ export function apply(ctx: Context): void {
       locale: NS,
     },
     WorkspacePicker,
+  ))
+  // The composer's git-branch tag: the same real-Workspace view the sidebar
+  // and picker read, resolved against the Host's git metadata.
+  const gitBranchInjected = (): GitBranchTagInjected => ({
+    gitBranch: path => workspaces.gitBranch(path),
+  })
+  ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register(
+    { name: 'conversation.composer.dock', id: 'git-branch', order: 50, locale: NS, inject: gitBranchInjected },
+    GitBranchTag,
   ))
 }
 

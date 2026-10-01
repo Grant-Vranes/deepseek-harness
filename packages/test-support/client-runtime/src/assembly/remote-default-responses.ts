@@ -15,6 +15,8 @@ export const remoteDefaultResponses: RemoteTable = {
     'session/list': ok({ items: [] }),
     // ui-workspace startup with no entries; first-use initialization is ineligible.
     'workspace/initializeDefault': ok(undefined),
+    // ui-workspace composer git-branch tag; the default fixture has no branch.
+    'workspace/gitBranch': ok({ branch: null }),
     // ui-settings `mirror.ensure()` at apply and again on `connection/reset`.
     'settings/describe': ok({ writable: true, hasDocument: false, namespaces: [] }),
     // ui-model-selection `ModelDirectoryResolver` constructor.

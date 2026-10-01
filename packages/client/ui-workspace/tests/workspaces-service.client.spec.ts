@@ -229,6 +229,10 @@ class FakeWorkspaces implements IWorkspaces {
       pinnedSessionIds: state.pinnedSessionIds.filter(id => id !== sessionId),
     }))
   }
+
+  async gitBranch(_path: string): Promise<string | null> {
+    return null
+  }
 }
 
 const listing: DirectoryListing = {

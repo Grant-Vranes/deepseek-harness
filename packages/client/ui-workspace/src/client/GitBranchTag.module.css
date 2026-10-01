@@ -1,0 +1,25 @@
+/* Git-branch tag under the composer: one tertiary text row in the dock tier,
+   matching the StatsPills reading tier (12px-ish secondary-minus size). */
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: calc(var(--dsh-content-font-size-secondary, 13px) - 1px);
+  line-height: calc(20px + var(--dsh-content-font-delta-secondary, 0px));
+  white-space: nowrap;
+}
+
+.root svg {
+  flex: none;
+  opacity: 0.8;
+}
+
+.branch {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
